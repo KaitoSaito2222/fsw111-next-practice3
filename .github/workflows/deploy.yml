@@ -39,5 +39,5 @@ jobs:
             # Login on the remote host and pull the latest image
             echo ${{ secrets.GHCR_TOKEN }} | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
             sudo docker pull ghcr.io/${{ github.repository }}:latest
-            sudo docker stop fsw111-next-practice || true && sudo docker rm fsw111-next-practice || true
-            sudo docker run -d --name fsw111-next-practice -p 80:3000 ghcr.io/${{ github.repository }}:latest
+            sudo docker stop my-next-project || true && sudo docker rm my-next-project || true
+            sudo docker run -d --name my-next-project -p 80:3000 ghcr.io/${{ github.repository }}:latest

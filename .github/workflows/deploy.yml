@@ -84,20 +84,28 @@ jobs:
             sudo docker ps | grep my-next-project
 
       # Step 6: Send deployment status to AWS Lambda for logging
-      - name: Send status to AWS Lambda
-        if: always()    # Always run, even if previous steps fail
+      - name: Trigger AWS Lambda Function
+        if: always() # ensures Lambda runs even if deploy fails
         run: |
-          # Determine deployment status (success or failed)
+          # Determine pipeline status
           STATUS="success"
-          [ "${{ job.status }}" != "success" ] && STATUS="failed"
-          
-          # Send POST request to Lambda with deployment metadata
-          curl -s -X POST ${{ secrets.LAMBDA_URL }} \
+          if [ "${{ job.status }}" != "success" ]; then STATUS="failed"; fi
+
+          # Gather metadata
+          COMMIT_SHA=${{ github.sha }}
+          BRANCH=${{ github.ref_name }}
+          ACTOR=${{ github.actor }}
+          TIMESTAMP=$(date)
+
+          echo "📡 Sending deployment status to AWS Lambda..."
+          RESPONSE=$(curl -s -X POST ${{ secrets.LAMBDA_URL }} \
             -H "Content-Type: application/json" \
-            -d '{
-              "status": "'"$STATUS"'",
-              "commit": "'${{ github.sha }}'",
-              "branch": "'${{ github.ref_name }}'",
-              "triggered_by": "'${{ github.actor }}'",
-              "timestamp": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
-            }'
+            -d "{
+              \"status\": \"$STATUS\",
+              \"commit\": \"$COMMIT_SHA\",
+              \"branch\": \"$BRANCH\",
+              \"triggered_by\": \"$ACTOR\",
+              \"timestamp\": \"$TIMESTAMP\"
+            }")
+
+          echo "Lambda Response: $RESPONSE"
